@@ -1,0 +1,37 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Generated protobuf files
+proto/*.pb.go
+proto/*_grpc.pb.go
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+

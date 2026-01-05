@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  master:
+    build:
+      context: .
+      dockerfile: Dockerfile.master
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./master.db:/app/master.db
+    environment:
+      - PORT=50051
+      - DB_PATH=/app/master.db
+    networks:
+      - scheduler-network
+
+  worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - master
+    environment:
+      - MASTER_ADDR=master:50051
+      - WORKER_ADDR=worker1:50052
+    networks:
+      - scheduler-network
+
+  worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - master
+    environment:
+      - MASTER_ADDR=master:50051
+      - WORKER_ADDR=worker2:50053
+    networks:
+      - scheduler-network
+
+  worker3:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - master
+    environment:
+      - MASTER_ADDR=master:50051
+      - WORKER_ADDR=worker3:50054
+    networks:
+      - scheduler-network
+
+networks:
+  scheduler-network:
+    driver: bridge
+

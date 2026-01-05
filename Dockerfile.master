@@ -1,0 +1,34 @@
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /app
+
+# Install protobuf compiler
+RUN apk add --no-cache protobuf protoc-gen-go protoc-gen-go-grpc
+
+# Copy go mod files
+COPY go.mod go.sum* ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Generate protobuf code
+RUN protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    proto/scheduler.proto
+
+# Build master
+RUN go build -o master ./master
+
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+COPY --from=builder /app/master .
+
+EXPOSE 50051
+
+CMD ["./master", "-port", "50051", "-db", "/app/master.db"]
+

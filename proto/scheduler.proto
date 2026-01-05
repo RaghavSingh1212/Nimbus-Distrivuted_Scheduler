@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+package scheduler;
+
+option go_package = "github.com/distributed-scheduler/nimbus/proto";
+
+// Task states
+enum TaskState {
+  PENDING = 0;
+  ASSIGNED = 1;
+  RUNNING = 2;
+  SUCCEEDED = 3;
+  FAILED = 4;
+  TIMED_OUT = 5;
+}
+
+// Worker states
+enum WorkerState {
+  ALIVE = 0;
+  SUSPECTED = 1;
+  DEAD = 2;
+}
+
+// Task specification
+message TaskSpec {
+  string command = 1;
+  repeated string args = 2;
+  int32 priority = 3;  // Higher = more important
+  int32 max_retries = 4;
+  int32 cpu_needed = 5;  // Optional: CPU cores required
+  int64 mem_needed = 6;  // Optional: Memory in bytes
+  string idempotency_key = 7;  // For exactly-once semantics
+}
+
+// Task representation
+message Task {
+  string task_id = 1;
+  TaskSpec spec = 2;
+  TaskState state = 3;
+  int32 attempts = 4;
+  string assigned_worker_id = 5;
+  int64 lease_expiry_time = 6;  // Unix timestamp in nanoseconds
+  int64 created_at = 7;
+  int64 updated_at = 8;
+  string output = 9;
+  string error = 10;
+}
+
+// Worker information
+message WorkerInfo {
+  string worker_id = 1;
+  string addr = 2;
+  int32 cpu_free = 3;
+  int64 mem_free = 4;
+  WorkerState state = 5;
+  int64 last_heartbeat = 6;
+}
+
+// Worker capabilities
+message WorkerCapabilities {
+  int32 cpu_total = 1;
+  int64 mem_total = 2;
+  int32 cpu_free = 3;
+  int64 mem_free = 4;
+}
+
+// ========== Worker Lifecycle ==========
+
+message RegisterWorkerRequest {
+  string addr = 1;
+  WorkerCapabilities capabilities = 2;
+}
+
+message RegisterWorkerResponse {
+  string worker_id = 1;
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  WorkerCapabilities capabilities = 2;
+}
+
+message HeartbeatResponse {
+  bool ack = 1;
+}
+
+// ========== Task Assignment ==========
+
+message PollTaskRequest {
+  string worker_id = 1;
+  WorkerCapabilities capabilities = 2;
+}
+
+message PollTaskResponse {
+  Task task = 1;
+  bool has_task = 2;
+}
+
+message ReportTaskResultRequest {
+  string task_id = 1;
+  string worker_id = 2;
+  TaskState status = 3;
+  string output = 4;
+  string error = 5;
+}
+
+message ReportTaskResultResponse {
+  bool ack = 1;
+}
+
+// ========== Client API ==========
+
+message SubmitTaskRequest {
+  TaskSpec spec = 1;
+}
+
+message SubmitTaskResponse {
+  string task_id = 1;
+}
+
+message GetTaskStatusRequest {
+  string task_id = 1;
+}
+
+message GetTaskStatusResponse {
+  Task task = 1;
+}
+
+message ListTasksRequest {
+  TaskState filter_state = 1;  // 0 = no filter
+  int32 limit = 2;
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}
+
+// Master service
+service MasterService {
+  // Worker lifecycle
+  rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  
+  // Task assignment
+  rpc PollTask(PollTaskRequest) returns (PollTaskResponse);
+  rpc ReportTaskResult(ReportTaskResultRequest) returns (ReportTaskResultResponse);
+  
+  // Client API
+  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
+  rpc GetTaskStatus(GetTaskStatusRequest) returns (GetTaskStatusResponse);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+}
+
