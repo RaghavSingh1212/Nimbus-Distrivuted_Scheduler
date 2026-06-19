@@ -2,6 +2,10 @@
 
 A production-ready distributed task scheduler inspired by Kubernetes, built with Go and gRPC. This system demonstrates core distributed systems concepts, including fault tolerance, lease-based task assignment, automatic failure recovery, and priority-based scheduling.
 
+## 🎨 Screenshots
+
+Here are some screenshots of the app:
+
 <img width="1365" height="792" alt="Screenshot 2026-06-19 at 3 43 41 PM" src="https://github.com/user-attachments/assets/2a55cb22-dbc9-4a16-a539-301860ed611e" />
 
 ## 🏗️ Architecture
